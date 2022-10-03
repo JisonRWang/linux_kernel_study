@@ -1,0 +1,2 @@
+file build/vmlinux
+target remote :1234
