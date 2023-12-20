@@ -777,7 +777,7 @@ void __init trap_init(void)
 	__set_fixmap(FIX_RO_IDT, __pa_symbol(idt_table), PAGE_KERNEL_RO);
 	idt_descr.address = fix_to_virt(FIX_RO_IDT);
 
-	/*
+	/* TODO 后期细看
 	 * Should be a barrier for any external CPU state:
 	 */
 	cpu_init();

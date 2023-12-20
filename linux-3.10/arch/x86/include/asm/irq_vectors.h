@@ -14,13 +14,13 @@
  * bootup, and never changes them. This is the general layout of the
  * IDT entries:
  *
- *  Vectors   0 ...  31 : system traps and exceptions - hardcoded events
- *  Vectors  32 ... 127 : device interrupts
- *  Vector  128         : legacy int80 syscall interface
- *  Vectors 129 ... INVALIDATE_TLB_VECTOR_START-1 except 204 : device interrupts
- *  Vectors INVALIDATE_TLB_VECTOR_START ... 255 : special interrupts
+ *  Vectors   0 ...  31 : system traps and exceptions - hardcoded events，陷阱门（除0错误、缺页异常等）；
+ *  Vectors  32 ... 127 : device interrupts，外部中断；
+ *  Vector  128         : legacy int80 syscall interface，系统调用那个中断（理解为内部中断）；
+ *  Vectors 129 ... INVALIDATE_TLB_VECTOR_START-1 except 204 : device interrupts，TODO 后期细看；
+ *  Vectors INVALIDATE_TLB_VECTOR_START ... 255 : special interrupts，TODO 后期细看。
  *
- * 64-bit x86 has per CPU IDT tables, 32-bit has one shared IDT table.
+ * 64-bit x86 has per CPU IDT tables, 32-bit has one shared IDT table.（64bit机每个CPU都有自己的中断描述符表，32bit机只有一张，这里说的都是x86架构）
  *
  * This file enumerates the exact layout of them:
  */
@@ -28,7 +28,7 @@
 #define NMI_VECTOR			0x02
 #define MCE_VECTOR			0x12
 
-/*
+/* 中断号0-31是陷阱门（除0错误，缺页异常等）
  * IDT vectors usable for external interrupt sources start at 0x20.
  * (0x80 is the syscall vector, 0x30-0x3f are for ISA)
  */

@@ -526,7 +526,7 @@ asmlinkage void __init start_kernel(void)
 	pidhash_init();
 	vfs_caches_init_early();
 	sort_main_extable();
-	trap_init();
+	trap_init();	/* 初始化陷阱门，TODO 更详细的后期细看 */
 	mm_init();	/* 初始化内存 TODO 后期细看 */
 
 	/* 初始化调度器，TODO 后期细看
