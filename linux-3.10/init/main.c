@@ -468,6 +468,7 @@ static void __init mm_init(void)
 	vmalloc_init();
 }
 
+/* 内核真正的入口，所有CPU架构最终都从这里启动内核 TODO 后期细看 */
 asmlinkage void __init start_kernel(void)
 {
 	char * command_line;
@@ -526,15 +527,15 @@ asmlinkage void __init start_kernel(void)
 	vfs_caches_init_early();
 	sort_main_extable();
 	trap_init();
-	mm_init();
+	mm_init();	/* 初始化内存 TODO 后期细看 */
 
-	/*
+	/* 初始化调度器，TODO 后期细看
 	 * Set up the scheduler prior starting any interrupts (such as the
 	 * timer interrupt). Full topology setup happens at smp_init()
 	 * time - but meanwhile we still have a functioning scheduler.
 	 */
 	sched_init();
-	/*
+	/* 此时不允许抢占，TODO 后期细看
 	 * Disable preemption - early bootup scheduling is extremely
 	 * fragile until we cpu_idle() for the first time.
 	 */
@@ -547,14 +548,14 @@ asmlinkage void __init start_kernel(void)
 	tick_nohz_init();
 	radix_tree_init();
 	/* init some links before init_ISA_irqs() */
-	early_irq_init();
-	init_IRQ();
+	early_irq_init();	/* 可能与初始化中断有关，但不确定这个early表示什么意思，TODO 后期细看 */
+	init_IRQ();	/* TODO 后期细看 */
 	tick_init();
-	init_timers();
+	init_timers();	/* TODO 后期细看 */
 	hrtimers_init();
-	softirq_init();
+	softirq_init();	/* 初始化软终端，与tasklet有关，TODO 后期细看重点 */
 	timekeeping_init();
-	time_init();
+	time_init();	/* TODO 后期细看 */
 	profile_init();
 	call_function_init();
 	WARN(!irqs_disabled(), "Interrupts were enabled early\n");
@@ -590,11 +591,11 @@ asmlinkage void __init start_kernel(void)
 		initrd_start = 0;
 	}
 #endif
-	page_cgroup_init();
+	page_cgroup_init();	/* TODO 后期细看 */
 	debug_objects_mem_init();
-	kmemleak_init();
-	setup_per_cpu_pageset();
-	numa_policy_init();
+	kmemleak_init();	/* TODO 后期细看 */
+	setup_per_cpu_pageset();	/* TODO 后期细看 */
+	numa_policy_init();	/* TODO 后期细看 */
 	if (late_time_init)
 		late_time_init();
 	sched_clock_init();
@@ -607,21 +608,21 @@ asmlinkage void __init start_kernel(void)
 #endif
 	thread_info_cache_init();
 	cred_init();
-	fork_init(totalram_pages);
+	fork_init(totalram_pages);	/* TODO 后期细看 */
 	proc_caches_init();
 	buffer_init();
 	key_init();
-	security_init();
+	security_init();	/* TODO 后期细看 */
 	dbg_late_init();
-	vfs_caches_init(totalram_pages);
-	signals_init();
+	vfs_caches_init(totalram_pages);	/* TODO 后期细看 */
+	signals_init();	/* TODO 后期细看 */
 	/* rootfs populating might need page-writeback */
-	page_writeback_init();
+	page_writeback_init();	/* TODO 后期细看 */
 #ifdef CONFIG_PROC_FS
 	proc_root_init();
 #endif
-	cgroup_init();
-	cpuset_init();
+	cgroup_init();	/* TODO 后期细看 */
+	cpuset_init();	/* TODO 后期细看 */
 	taskstats_init_early();
 	delayacct_init();
 
@@ -635,9 +636,12 @@ asmlinkage void __init start_kernel(void)
 		efi_free_boot_services();
 	}
 
-	ftrace_init();
+	ftrace_init();	/* TODO 后期细看 */
 
-	/* Do the rest non-__init'ed, we're now alive */
+	/* Do the rest non-__init'ed, we're now alive 
+	 * 前面初始化本机内存管理等系统直接相关的功能，从rest_init()开始初始化
+	 * 各个更细节的功能模块，例如网卡设备和协议栈等。
+	 * */
 	rest_init();
 }
 

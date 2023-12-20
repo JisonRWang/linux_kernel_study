@@ -137,6 +137,7 @@ static void __init copy_bootdata(char *real_mode_data)
 	}
 }
 
+/* TODO 后期细看 */
 void __init x86_64_start_kernel(char * real_mode_data)
 {
 	int i;
@@ -179,6 +180,7 @@ void __init x86_64_start_kernel(char * real_mode_data)
 	/* set init_level4_pgt kernel high mapping*/
 	init_level4_pgt[511] = early_level4_pgt[511];
 
+	/* 这里才是真正调用内核启动入口的地方 */
 	x86_64_start_reservations(real_mode_data);
 }
 
@@ -190,5 +192,6 @@ void __init x86_64_start_reservations(char *real_mode_data)
 
 	reserve_ebda_region();
 
+	/* 真正开始启动内核 */
 	start_kernel();
 }

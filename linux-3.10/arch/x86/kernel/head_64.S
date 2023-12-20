@@ -308,6 +308,7 @@ ENDPROC(start_cpu0)
 	__REFDATA
 	.balign	8
 	GLOBAL(initial_code)
+	/* x86架构启动内核的入口 */
 	.quad	x86_64_start_kernel
 	GLOBAL(initial_gs)
 	.quad	INIT_PER_CPU_VAR(irq_stack_union)
