@@ -1,0 +1,2 @@
+1. 出现在 net_dev_init() 函数上面的注释中的“rtnl semaphore”是什么？
+2. initcall_debug 怎么设置，在哪里设置？
