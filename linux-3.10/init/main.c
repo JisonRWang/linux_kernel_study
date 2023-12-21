@@ -366,13 +366,14 @@ static noinline void __init_refok rest_init(void)
 	int pid;
 
 	rcu_scheduler_starting();
-	/*
+	/* 单独用一个内核线程来运行 kernel_init 函数，该函数里面会加载各个模块，例如网络设备和协议栈。
+	 * TODO 后期细看这里
 	 * We need to spawn init first so that it obtains pid 1, however
 	 * the init task will end up wanting to create kthreads, which, if
 	 * we schedule it before we create kthreadd, will OOPS.
 	 */
 	kernel_thread(kernel_init, NULL, CLONE_FS | CLONE_SIGHAND);
-	numa_default_policy();
+	numa_default_policy();	/* TODO 后期细看 */
 	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
 	rcu_read_lock();
 	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
@@ -684,10 +685,11 @@ int __init_or_module do_one_initcall(initcall_t fn)
 	int count = preempt_count();
 	int ret;
 
+	/* TODO 后期细看 initcall_debug 具体该怎么设置、在哪设置 */
 	if (initcall_debug)
 		ret = do_one_initcall_debug(fn);
 	else
-		ret = fn();
+		ret = fn();	/* net_dev_init() 在这里被调用 */
 
 	msgbuf[0] = 0;
 
@@ -752,6 +754,9 @@ static void __init do_initcall_level(int level)
 		   level, level,
 		   &repair_env_string);
 
+	/* TODO 后期细看
+	 * 这里会调用到 net_dev_init()。
+	 * */
 	for (fn = initcall_levels[level]; fn < initcall_levels[level+1]; fn++)
 		do_one_initcall(*fn);
 }
@@ -760,6 +765,10 @@ static void __init do_initcalls(void)
 {
 	int level;
 
+	/* TODO 后期细看
+	 * subsys_initcall(net_dev_init)，net_dev_init()被用这种方式注册到一个函数指针，最终
+	 * 应该就是在这里调用到这个函数指针的，也就是调用了 net_dev_init()。
+	 * */
 	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)
 		do_initcall_level(level);
 }
@@ -776,10 +785,14 @@ static void __init do_basic_setup(void)
 	cpuset_init_smp();
 	usermodehelper_init();
 	shmem_init();
-	driver_init();
+	driver_init();	/* TODO 后期细看，应该是初始化驱动程序的 */
 	init_irq_proc();
 	do_ctors();
 	usermodehelper_enable();
+
+	/* TODO 后期细看
+	 * 加载网络设备和协议栈就在这里面做的。
+	 * */
 	do_initcalls();
 }
 
@@ -814,6 +827,9 @@ static noinline void __init kernel_init_freeable(void);
 
 static int __ref kernel_init(void *unused)
 {
+	/* TODO 后期细看
+	 * 该函数内部会将模块逐个启动，例如加载网络设备、内核协议栈模块等。
+	 * */
 	kernel_init_freeable();
 	/* need to finish all async __init code before freeing the memory */
 	async_synchronize_full();
@@ -866,7 +882,7 @@ static noinline void __init kernel_init_freeable(void)
 	 * init can allocate pages on any node
 	 */
 	set_mems_allowed(node_states[N_MEMORY]);
-	/*
+	/* TODO 后期细看，这个初始化过程是不是只要在任何一个CPU上运行完就行？
 	 * init can run on any cpu.
 	 */
 	set_cpus_allowed_ptr(current, cpu_all_mask);
@@ -878,9 +894,10 @@ static noinline void __init kernel_init_freeable(void)
 	do_pre_smp_initcalls();
 	lockup_detector_init();
 
-	smp_init();
-	sched_init_smp();
+	smp_init();	/* TODO 后期细看 */
+	sched_init_smp();	/* TODO 后期细看 */
 
+	/* 各个模块的加载过程在这里面，例如网卡设备和协议栈。 */
 	do_basic_setup();
 
 	/* Open the /dev/console on the rootfs, this should never fail */
