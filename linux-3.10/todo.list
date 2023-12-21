@@ -1,2 +1,5 @@
 1. 出现在 net_dev_init() 函数上面的注释中的“rtnl semaphore”是什么？
 2. initcall_debug 怎么设置，在哪里设置？
+3. subsys_initcall()的详细原理
+4. fs_initcall()的详细原理
+5. fs_initcall(ipv4_offload_init);卸载相关的东西
