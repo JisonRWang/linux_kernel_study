@@ -689,7 +689,7 @@ int __init_or_module do_one_initcall(initcall_t fn)
 	if (initcall_debug)
 		ret = do_one_initcall_debug(fn);
 	else
-		ret = fn();	/* net_dev_init() 在这里被调用 */
+		ret = fn();	/* net_dev_init()/inet_init() 貌似在这里都会被调用到 */
 
 	msgbuf[0] = 0;
 
@@ -756,6 +756,7 @@ static void __init do_initcall_level(int level)
 
 	/* TODO 后期细看
 	 * 这里会调用到 net_dev_init()。
+	 * 貌似也会调用到 inet_init()。
 	 * */
 	for (fn = initcall_levels[level]; fn < initcall_levels[level+1]; fn++)
 		do_one_initcall(*fn);
@@ -768,6 +769,7 @@ static void __init do_initcalls(void)
 	/* TODO 后期细看
 	 * subsys_initcall(net_dev_init)，net_dev_init()被用这种方式注册到一个函数指针，最终
 	 * 应该就是在这里调用到这个函数指针的，也就是调用了 net_dev_init()。
+	 * fs_initcall(inet_init)，貌似也是在在里被调用到的。
 	 * */
 	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)
 		do_initcall_level(level);
