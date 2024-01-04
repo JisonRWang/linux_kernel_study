@@ -1,0 +1,19 @@
+Source: arping
+Section: net
+Priority: optional
+Maintainer: Salvatore Bonaccorso <carnil@debian.org>
+Build-Depends: check, debhelper-compat (= 13), libnet1-dev, libpcap-dev, libseccomp-dev
+Standards-Version: 4.6.0
+Homepage: http://www.habets.pp.se/synscan/programs.php?prog=arping
+Vcs-Browser: https://salsa.debian.org/debian/arping
+Vcs-Git: https://salsa.debian.org/debian/arping.git
+Rules-Requires-Root: no
+
+Package: arping
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Conflicts: iputils-arping
+Description: sends IP and/or ARP pings (to the MAC address)
+ The arping utility sends ARP and/or ICMP requests to the specified host
+ and displays the replies. The host may be specified by its hostname,
+ its IP address, or its MAC address.

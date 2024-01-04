@@ -1,0 +1,384 @@
+arping (2.23-1) unstable; urgency=medium
+
+  * New upstream version 2.23
+  * Update copyright years for upstream files.
+  * Update copyright years for debian/* packaging files
+  * debian/control: Add Build-Depends on libseccomp-dev
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 23 Mar 2022 13:16:53 +0100
+
+arping (2.22-1) unstable; urgency=medium
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster
+    - Remove 2 maintscript entries from 1 files.
+
+  [ Salvatore Bonaccorso ]
+  * debian/test/control: smoke-test: Mark as superficial (Closes: #971450)
+  * Rename Salsa CI configuration file to debian/salsa-ci.yml
+  * Remove obsolete fields Name, Contact from debian/upstream/metadata
+  * Declare compliance with Debian policy 4.6.0
+  * New upstream version 2.22
+  * debian/watch: Switch to HTTPS transport in watch URL
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 19 Dec 2021 15:15:04 +0100
+
+arping (2.21-2) unstable; urgency=medium
+
+  * unit tests: Remove test registry code in favour of code duplication
+    (Closes: #980595)
+  * Declare compliance with Debian policy 4.5.1
+  * Update copyright years for debian/* packaging files
+  * Bump Debhelper compat level to 13
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Thu, 21 Jan 2021 06:29:56 +0100
+
+arping (2.21-1) unstable; urgency=medium
+
+  * New upstream version 2.21
+  * Update copyright years for debian/* packaging files
+  * Declare compliance with Debian policy 4.5.0
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 15 Mar 2020 14:56:34 +0100
+
+arping (2.20-1) unstable; urgency=medium
+
+  * New upstream version 2.20
+  * Update copyright years for upstream files
+  * Update copyright years for debian/* packaging files
+  * Drop spelling-error-in-manpage.patch (applied upstream)
+  * Drop Fall-back-to-gettimeofday-if-clock_gettime-fails.patch (applied
+    upstream)
+  * Drop Provide-configure-time-fallback-for-cross-compile-ch.patch (applied
+    upstream)
+  * Drop Further-improvement-for-cross-compiling.patch (applied upstream)
+  * Drop Further-simplify-CLOCK_MONOTONIC-check.patch (applied upstream)
+  * Update .gitlab-ci.yml based on Salsa CI Team's template
+  * Declare compliance with Debian policy 4.4.1
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Thu, 10 Oct 2019 09:04:02 +0200
+
+arping (2.19-6) unstable; urgency=medium
+
+  * Update .gitlab-ci.yml based on Salsa CI Team's template
+  * GitLab CI/Lintian: install dpkg-dev, that ships dpkg-architecture, needed
+    to run some Lintian checks
+  * Replace home-made GitLab CI with the standard Salsa pipeline
+  * Bump Debhelper compat level to 12
+  * Declare compliance with Debian policy 4.3.0
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Fri, 28 Dec 2018 14:11:07 +0100
+
+arping (2.19-5) unstable; urgency=medium
+
+  * Add an initial Gitlab CI config file
+  * Add simple smoke test for autopkgtest
+  * Declare compliance with Debian policy 4.1.4
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 23 May 2018 14:10:02 +0200
+
+arping (2.19-4) unstable; urgency=medium
+
+  * Update Vcs-* headers for switch to salsa.debian.org
+  * Bump Debhelper compat level to 11
+  * Update copyright years for debian/* packaging files
+  * Declare compliance with Debian policy 4.1.3
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sat, 17 Feb 2018 10:21:13 +0100
+
+arping (2.19-3) unstable; urgency=medium
+
+  * Use debhelper integraton for dpkg-maintscript-helper.
+    Instead of using the snippets in postrm, preinst and postinst maintainer
+    scripts use the debhelper integration.
+  * Set Rules-Requires-Root to no
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 22 Nov 2017 21:08:09 +0100
+
+arping (2.19-2) unstable; urgency=medium
+
+  * Add debian/upstream/metadata
+  * Fall back to gettimeofday() if clock_gettime() fails
+  * Fix "FTCBFS: uses AC_TRY_RUN"
+    - Provide configure-time fallback for cross-compile checks.
+    - Further improvement for cross-compiling.
+    Thanks to Helmut Grohne and Thomas Habets (Closes: #877402)
+  * Further simplify CLOCK_MONOTONIC check
+  * debian/watch: Bump format to version 4.
+    Use @PACKAGE@, @ANY_VERSION@ and @ARCHIVE_EXT@ substitutions.
+    Replace use of pgpsigurlmangle with pgpmode=auto and let uscan check
+    various possible URLs for the signature file on its own.
+  * Declare compliance with Debian policy 4.1.1
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 04 Oct 2017 21:56:08 +0200
+
+arping (2.19-1) unstable; urgency=medium
+
+  * New upstream version 2.19 (Closes: #846924)
+  * Update copyright years for upstream files
+  * debian/control: Add check to Build-Depends
+  * Correct paths to example files in README.Debian
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 02 Aug 2017 15:59:44 +0200
+
+arping (2.14-2) unstable; urgency=medium
+
+  * New maintainer for arping.
+    Thanks to Giuseppe Iuculano for all the previous work on arping.
+    (Closes: #866831)
+  * Really do not install /etc/network/if-up.d/arping anymore.
+    Even the files were installed to the examples directory due to the use
+    of the default filenames used by dh_installinit and dh_installfiupdown
+    th files were additionally still be installed to
+    /etc/network/if-up.d/arping and /etc/default/arping. (Closes: #492461)
+  * Properly remove obsolete /etc/default/arping and if-up.d script
+  * Update Vcs-(Git|Browser) fields for new location in collab-maint
+  * Bump Debhelper compat level to 10
+  * Drop explicit Build-Depends on autotools-dev
+  * debian/copyright: Update format to copyright-format 1.0
+  * Import upstream public OpenPGP key in debian/upstream/signing-key.asc
+  * Instruct uscan to verify upstream releases' OpenPGP signature
+  * Add patch to fix spelling error in manpage of arping.8
+  * Declare compliance with Debian policy 4.0.0
+  * debian/control: Wrap and sort fields
+  * Drop Conflicts with ancient version of iputils-ping
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 02 Aug 2017 09:48:36 +0200
+
+arping (2.14-1) unstable; urgency=low
+
+  * [fb6f4d7] Imported Upstream version 2.14
+    - Fixed -w issue (Closes: #714042)
+  * [82c064d] Removed patches applied upstream
+  * [5da3a23] debian/control: Use canonical VCS field
+  * [87c7348] Added build-arch and build-indep targets
+  * [1e6fb8e] Switch to debhelper 9 compatibility
+  * [d282404] Update to Standards-Version 3.9.5, no changes need
+  * [19c2d75] Rewrite debian/rules with new dh syntax
+
+ -- Giuseppe Iuculano <iuculano@debian.org>  Sat, 04 Oct 2014 18:24:28 +0200
+
+arping (2.09-2) unstable; urgency=low
+
+  * [084a112] Fix a FTBFS on kfreebsd. (Closes: #577002) - thanks to
+    Petr Salinger
+
+ -- Giuseppe Iuculano <iuculano@debian.org>  Fri, 09 Apr 2010 17:47:14 +0200
+
+arping (2.09-1) unstable; urgency=low
+
+  * [ae34a1a] Switch to quilt
+  * [6fefc48] Updated my email address
+  * [a4d6a0d] Bump debhelper
+  * [1280d1e] Bump to Standards-Version 3.8.4
+  * [ee5d7be] Updated watch file
+  * [3f22b39] Imported Upstream version 2.09
+  * [2cab0a0] Switch to dpkg-source 3.0 (quilt) format
+  * [44915d7] Added autotools-dev in BUild-depends and copy
+    config.sub/guess at build time
+  * [cd3e6d3] Remove config.guess and config.sub at build time
+  * [183451b] arping-scan-net.sh is now in extra/
+  * [f432d2a] removed 01_fix_makefile.patch
+  * [951cfa4] Added ${misc:Depends} in Depends and removed quilt
+  * [eb272a9] dh-clean-k-is-deprecated, use dh_prep
+  * [c45d3b6] Refreshed 02_fix_manpage.patch
+  * [ba77b60] Added VCS control fields
+
+ -- Giuseppe Iuculano <iuculano@debian.org>  Sun, 04 Apr 2010 11:36:04 +0200
+
+arping (2.08-1) unstable; urgency=low
+
+  * New upstream release
+  * Re-patch new arping.8 for fixing manpage-has-errors-from-man and
+    hyphen-used-as-minus-sign lintian warnings
+  * debian/copyright: Updated copyright year and url where arping was
+    downloaded
+
+ -- Giuseppe Iuculano <giuseppe@iuculano.it>  Fri, 15 Aug 2008 22:44:52 +0200
+
+arping (2.07~pre1-3) unstable; urgency=low
+
+  * Removed if-up.d script, there is a similar script in ifupdown-extra.
+    Moved to examples/ (Closes: #492461)
+    + Removed lsb-base from Depends and come back to debhelper (>= 5)
+    + debian/control: removed dh_installinit and dh_installifupdown
+    + debian/arping.example: Added debian/arping.if-up and arping.if-up
+    + Updated Readme.Debian
+
+ -- Giuseppe Iuculano <giuseppe@iuculano.it>  Sun, 27 Jul 2008 03:30:59 +0200
+
+arping (2.07~pre1-2) unstable; urgency=low
+
+  * Added a patch (improved) that adds a network/ip-up.d script for using
+    arping to check for IP duplicates after bringing up the interface. Thanks
+    to Robert Millan (Closes: #431066)
+  * debian/rules:
+    + Removed CFLAGS settings, this is now done by dpkg-buildpackage
+    + Added dh_installinit and dh_installifupdown in binary-arch section
+  * debian/control:
+    + Added lsb-base (>= 3.0-10) to Depends (debian/arping.if-up needs it)
+    + Modified debhelper version in Build-Depends, debhelper (>= 5.0.44~),
+      dh_installinit is in debhelper (>= 5.0.44~)
+
+ -- Giuseppe Iuculano <giuseppe@iuculano.it>  Mon, 30 Jun 2008 16:45:28 +0200
+
+arping (2.07~pre1-1) unstable; urgency=low
+
+  * New upstream release. libnet is now initialized correctly, which fixes the
+    segmentation fault on imbecile user input. (Closes: #210992)
+  * New maintainer, thanks to LENART Janos for the prior work on arping
+    (Closes: #487334)
+  * Rewrite debian/rules, now handles nostrip build option (Closes: #436472)
+  * Added debhelper level (5)
+  * Switch to dpatch
+    + 01_fix_makefile.dpatch fixed some common path problems
+    + 02_fix_manpage.dpatch fixed lintian warning manpage-has-errors-from-man,
+      hyphen-used-as-minus-sign
+  * Added debian/examples debian/docs
+  * Added debhelper (>= 5) to Build-Depends
+  * Updated to standards version 3.8.0
+    + Added Homepage control field
+  * Removed libpcap0.8-dev from Build-depends and added libpcap-dev
+
+ -- Giuseppe Iuculano <giuseppe@iuculano.it>  Sun, 22 Jun 2008 16:17:14 +0200
+
+arping (2.05-2) unstable; urgency=low
+
+  * QA upload.
+  * Restore LENART Janos as maintainer at his request.
+  * Conforms to Standards version 3.7.2.
+
+ -- Matej Vela <vela@debian.org>  Sun, 23 Jul 2006 02:40:33 +0200
+
+arping (2.05-1) unstable; urgency=low
+
+  * New upstream release.
+  * Set Maintainer to Debian QA Group.
+  * Bump Standards-Version to 3.7.0.
+  * Add watch file.  closes: #255861.
+  * Add copyright to copyright file.  closes: #290058.
+  * Remove XSIism from rules file.
+  * Change build-dep from libpcap-dev to libpcap0.8-dev.
+  * Update FSF address in the copyright file.
+
+ -- Clint Adams <schizo@debian.org>  Thu, 27 Apr 2006 00:36:14 -0400
+
+arping (2.01-3) unstable; urgency=medium
+
+  * Setgid removed (on control-directory).           (closes: Bug#234481)
+  * Bashism fixed.                                   (closes: Bug#230342)
+
+ -- Lenart Janos <ocsi@debian.org>  Sat, 13 Mar 2004 22:50:04 +0100
+
+arping (2.01-2) unstable; urgency=medium
+
+  * Fixed Build-Depends.                             (closes: Bug#220760)
+
+ -- Lenart Janos <ocsi@debian.org>  Fri, 26 Dec 2003 11:37:16 +0100
+
+arping (2.01-1) unstable; urgency=medium
+
+  * New upstream release. Take care: minor changes!  (closes: Bug#136311,
+                                                              Bug#210992,
+							      Bug#214259)
+  * Changed Depends: libnet0-dev to libnet1-dev.
+  * Joined, and carefully edited copyright file ;)
+  * Upgraded Standards-Version.
+
+ -- Lenart Janos <ocsi@debian.org>  Sun,  2 Nov 2003 13:09:45 +0100
+
+arping (1.05-1) unstable; urgency=low
+
+  * New upstream release.
+  * Last NMU accepted.                               (closes: Bug#156191)
+  * Upgraded Standards-Version.
+
+ -- Lenart Janos <ocsi@debian.org>  Tue,  5 Nov 2002 23:57:58 +0100
+
+arping (1.04-1.1) unstable; urgency=low
+
+  * Non maintainer upload
+  * Rebuilt with new libpcap to remove dependency on libpcap0, which I
+    got removed from unstable by accident. Sorry about this...
+
+ -- Torsten Landschoff <torsten@debian.org>  Sat, 10 Aug 2002 11:36:43 +0200
+
+arping (1.04-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fixed Build-Depends.                             (closes: Bug#134857)
+
+ -- Lenart Janos <ocsi@debian.org>  Fri, 22 Feb 2002 18:30:46 +0100
+
+arping (1.02-2) unstable; urgency=low
+
+  * Added include net/ethernet.h into arping.c so it may comile on the
+    s390 architecture.                               (closes: Bug#123663)
+  * Fixed debian/{post,pre}{inst,rem}.
+
+ -- Lenart Janos <ocsi@debian.org>  Sat, 22 Dec 2001 15:46:37 +0100
+
+arping (1.02-1) unstable; urgency=low
+
+  * New upstream release.
+  * Binary moved into /usr/sbin - it's for root.     (closes: Bug#122265)
+  * Completly repacked. Bye-bye debhelper.
+
+ -- Lenart Janos <ocsi@debian.org>  Tue, 11 Dec 2001 17:32:45 +0100
+
+arping (1.01-1) unstable; urgency=low
+
+  * New upstream release.
+  * Now hopefully works on hppa.                     (closes: Bug#104929)
+  * Emacs-thingy removed from this changelog.
+  * The libnet0-dev dependency removed, becouse libcap-dev depends on it
+    anyway.
+
+ -- Lenart Janos <ocsi@debian.org>  Sun, 21 Oct 2001 00:15:06 +0200
+
+arping (1.00-2) unstable; urgency=low
+
+  * The last Debian version was packaged as that was Debian-specific.
+
+ -- Lenart Janos <ocsi@debian.org>  Wed,  8 Aug 2001 21:03:52 +0200
+
+arping (1.00-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Lenart Janos <ocsi@debian.org>  Sun,  8 Jul 2001 15:31:10 +0200
+
+arping (0.98-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Lenart Janos <ocsi@debian.org>  Thu, 21 Jun 2001 21:25:55 +0200
+
+arping (0.97-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Lenart Janos <ocsi@debian.org>  Fri, 15 Jun 2001 20:33:11 +0200
+
+arping (0.96-3) unstable; urgency=medium
+
+  * Added Conflicts: iputils-arping. (That arping is a fully different
+    solution for the same thing.) Thanks for cooperation:
+    Noah L. Meyerhans <noahm@debian.org>.             (closes: Bug#99224)
+
+ -- Lenart Janos <ocsi@debian.org>  Sun,  3 Jun 2001 22:01:33 +0200
+
+arping (0.96-2) unstable; urgency=medium
+
+  * Errrr. Of course I forgot that my initial idea was to add a debconf
+    question about the setuid thingy, so I the Depends: and the
+    Build-Depends: was not removed against debconf. Fixed now.
+  * Added Build-Depends against lib{pcap,net}-dev.    (closes: Bug#99268)
+
+ -- Lenart Janos <ocsi@debian.org>  Tue, 29 May 2001 21:03:09 +0200
+
+arping (0.96-1) unstable; urgency=low
+
+  * Initial Release.                                  (closes: Bug#98919)
+
+ -- Lenart Janos <ocsi@debian.org>  Sun, 27 May 2001 16:46:46 +0200
