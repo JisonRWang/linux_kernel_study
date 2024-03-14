@@ -1356,7 +1356,7 @@ int sock_create_kern(int family, int type, int protocol, struct socket **res)
 	return __sock_create(&init_net, family, type, protocol, res, 1);
 }
 EXPORT_SYMBOL(sock_create_kern);
-
+/* 用户态socket()接口的系统调用 */
 SYSCALL_DEFINE3(socket, int, family, int, type, int, protocol)
 {
 	int retval;

@@ -538,7 +538,7 @@ static void unix_set_peek_off(struct sock *sk, int val)
 	mutex_unlock(&u->readlock);
 }
 
-
+/* 流式套接字处理函数集 */
 static const struct proto_ops unix_stream_ops = {
 	.family =	PF_UNIX,
 	.owner =	THIS_MODULE,
@@ -560,7 +560,7 @@ static const struct proto_ops unix_stream_ops = {
 	.sendpage =	sock_no_sendpage,
 	.set_peek_off =	unix_set_peek_off,
 };
-
+/* 数据报套接字处理函数集 */
 static const struct proto_ops unix_dgram_ops = {
 	.family =	PF_UNIX,
 	.owner =	THIS_MODULE,

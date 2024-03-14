@@ -932,7 +932,7 @@ static int inet_compat_ioctl(struct socket *sock, unsigned int cmd, unsigned lon
 	return err;
 }
 #endif
-
+/* 流式套接字处理函数集 */
 const struct proto_ops inet_stream_ops = {
 	.family		   = PF_INET,
 	.owner		   = THIS_MODULE,
@@ -960,7 +960,7 @@ const struct proto_ops inet_stream_ops = {
 #endif
 };
 EXPORT_SYMBOL(inet_stream_ops);
-
+/* 数据报套接字处理函数集 */
 const struct proto_ops inet_dgram_ops = {
 	.family		   = PF_INET,
 	.owner		   = THIS_MODULE,
