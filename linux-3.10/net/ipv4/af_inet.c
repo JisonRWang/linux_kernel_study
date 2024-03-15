@@ -1017,10 +1017,10 @@ static const struct proto_ops inet_sockraw_ops = {
 	.compat_ioctl	   = inet_compat_ioctl,
 #endif
 };
-
+/* inet 协议族，绑定套接字处理函数集合 */
 static const struct net_proto_family inet_family_ops = {
 	.family = PF_INET,
-	.create = inet_create,
+	.create = inet_create,  /* 创建并初始化 struct sock 结构体 */
 	.owner	= THIS_MODULE,
 };
 

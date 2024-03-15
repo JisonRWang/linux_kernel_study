@@ -686,7 +686,7 @@ static int unix_create(struct net *net, struct socket *sock, int protocol,
 	default:
 		return -ESOCKTNOSUPPORT;
 	}
-
+    /* 创建并初始化 struct sock 结构 */
 	return unix_create1(net, sock) ? 0 : -ENOMEM;
 }
 
@@ -2383,10 +2383,10 @@ static const struct file_operations unix_seq_fops = {
 };
 
 #endif
-
+/* unix 协议族 */
 static const struct net_proto_family unix_family_ops = {
 	.family = PF_UNIX,
-	.create = unix_create,
+	.create = unix_create,  /* 绑不同套接字选项对应的处理函数集合 */
 	.owner	= THIS_MODULE,
 };
 
