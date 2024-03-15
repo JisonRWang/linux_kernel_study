@@ -1376,11 +1376,11 @@ SYSCALL_DEFINE3(socket, int, family, int, type, int, protocol)
 
 	if (SOCK_NONBLOCK != O_NONBLOCK && (flags & SOCK_NONBLOCK))
 		flags = (flags & ~SOCK_NONBLOCK) | O_NONBLOCK;
-
+    /* 创建并初始化struct socket和struct sock，并将这俩关联起来 */
 	retval = sock_create(family, type, protocol, &sock);
 	if (retval < 0)
 		goto out;
-
+    /* 把socket和文件系统关联起来 */
 	retval = sock_map_fd(sock, flags & (O_CLOEXEC | O_NONBLOCK));
 	if (retval < 0)
 		goto out_release;
@@ -1510,7 +1510,7 @@ SYSCALL_DEFINE3(bind, int, fd, struct sockaddr __user *, umyaddr, int, addrlen)
 			if (!err)
 				err = sock->ops->bind(sock,
 						      (struct sockaddr *)
-						      &address, addrlen);
+						      &address, addrlen);   /* 一种可能性inet_bind */
 		}
 		fput_light(sock->file, fput_needed);
 	}
