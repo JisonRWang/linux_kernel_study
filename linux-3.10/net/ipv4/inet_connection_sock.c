@@ -747,12 +747,12 @@ void inet_csk_prepare_forced_close(struct sock *sk)
 	inet_sk(sk)->inet_num = 0;
 }
 EXPORT_SYMBOL(inet_csk_prepare_forced_close);
-
+/* nr_table_entries 就是传给 listen() 的参数 backlog */
 int inet_csk_listen_start(struct sock *sk, const int nr_table_entries)
 {
 	struct inet_sock *inet = inet_sk(sk);
 	struct inet_connection_sock *icsk = inet_csk(sk);
-	int rc = reqsk_queue_alloc(&icsk->icsk_accept_queue, nr_table_entries);
+	int rc = reqsk_queue_alloc(&icsk->icsk_accept_queue, nr_table_entries); /* 请求队列 */
 
 	if (rc != 0)
 		return rc;
@@ -770,12 +770,17 @@ int inet_csk_listen_start(struct sock *sk, const int nr_table_entries)
 	if (!sk->sk_prot->get_port(sk, inet->inet_num)) {
 		inet->inet_sport = htons(inet->inet_num);
 
-		sk_dst_reset(sk);
-		sk->sk_prot->hash(sk);
+		/* 清除 dst cache？这是干嘛的？ */
+		sk_dst_reset(sk);   
+		/* 将当前sk放到全局的listening哈希表，SYN到来时通过
+		 * __inet_lookup_listen(???)函数找到这个listen中的sock
+		 * */
+		sk->sk_prot->hash(sk);  /* 对应 inet_hash() */
 
 		return 0;
 	}
 
+	/* 这里对应端口已经被占用的情况 */
 	sk->sk_state = TCP_CLOSE;
 	__reqsk_queue_destroy(&icsk->icsk_accept_queue);
 	return -EADDRINUSE;

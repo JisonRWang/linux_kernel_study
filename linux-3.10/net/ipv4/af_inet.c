@@ -232,7 +232,7 @@ int inet_listen(struct socket *sock, int backlog)
 			if (err)
 				goto out;
 		}
-		err = inet_csk_listen_start(sk, backlog);
+		err = inet_csk_listen_start(sk, backlog);   /* FASTOPEN之外最关键的逻辑 */
 		if (err)
 			goto out;
 	}

@@ -1531,13 +1531,14 @@ SYSCALL_DEFINE2(listen, int, fd, int, backlog)
 
 	sock = sockfd_lookup_light(fd, &err, &fput_needed);
 	if (sock) {
+		/* 限定backlog在这里的实际值不超过 /proc/sys/net/core/somaxconn */
 		somaxconn = sock_net(sock->sk)->core.sysctl_somaxconn;
 		if ((unsigned int)backlog > somaxconn)
 			backlog = somaxconn;
 
 		err = security_socket_listen(sock, backlog);
 		if (!err)
-			err = sock->ops->listen(sock, backlog);
+			err = sock->ops->listen(sock, backlog); /* 原型inet_listen */
 
 		fput_light(sock->file, fput_needed);
 	}
