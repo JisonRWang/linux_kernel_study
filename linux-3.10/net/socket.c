@@ -322,7 +322,7 @@ static struct dentry *sockfs_mount(struct file_system_type *fs_type,
 }
 
 static struct vfsmount *sock_mnt __read_mostly;
-
+/* 定义 sockfs 文件系统的结构体 */
 static struct file_system_type sock_fs_type = {
 	.name =		"sockfs",
 	.mount =	sockfs_mount,
@@ -2601,7 +2601,7 @@ void sock_unregister(int family)
 	printk(KERN_INFO "NET: Unregistered protocol family %d\n", family);
 }
 EXPORT_SYMBOL(sock_unregister);
-
+/* 内核初始化时，调用该函数初始化 sockfs */
 static int __init sock_init(void)
 {
 	int err;
@@ -2622,11 +2622,11 @@ static int __init sock_init(void)
 	 */
 
 	init_inodecache();
-
+	/* 注册网络文件系统 */
 	err = register_filesystem(&sock_fs_type);
 	if (err)
 		goto out_fs;
-	sock_mnt = kern_mount(&sock_fs_type);
+	sock_mnt = kern_mount(&sock_fs_type);/* 没有实体介质的文件系统常用该函数 */
 	if (IS_ERR(sock_mnt)) {
 		err = PTR_ERR(sock_mnt);
 		goto out_mount;
@@ -2651,7 +2651,7 @@ out_mount:
 out_fs:
 	goto out;
 }
-
+/* do_one_initcall 里面最终会调到 sock_init */
 core_initcall(sock_init);	/* early initcall */
 
 #ifdef CONFIG_PROC_FS

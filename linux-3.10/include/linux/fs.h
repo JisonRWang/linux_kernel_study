@@ -1811,10 +1811,10 @@ struct file_system_type {
 #define FS_USERNS_DEV_MOUNT	16 /* A userns mount does not imply MNT_NODEV */
 #define FS_RENAME_DOES_D_MOVE	32768	/* FS will handle d_move() during rename() internally. */
 	struct dentry *(*mount) (struct file_system_type *, int,
-		       const char *, void *);
-	void (*kill_sb) (struct super_block *);
+		       const char *, void *);   /* 挂载此文件系统时使用的回调函数 */
+	void (*kill_sb) (struct super_block *); /* 释放超级块函数指针 */
 	struct module *owner;
-	struct file_system_type * next;
+	struct file_system_type * next; /* 指向文件系统类型链表的下一个文件系统类型 */
 	struct hlist_head fs_supers;
 
 	struct lock_class_key s_lock_key;

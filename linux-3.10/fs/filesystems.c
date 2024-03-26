@@ -29,7 +29,7 @@
  *	Once the reference is obtained we can drop the spinlock.
  */
 
-static struct file_system_type *file_systems;
+static struct file_system_type *file_systems;   /* 全局的文件系统变量 */
 static DEFINE_RWLOCK(file_systems_lock);
 
 /* WARNING: This can be used only if we _already_ own a reference */
