@@ -27,7 +27,7 @@
 #include <linux/netdevice.h>
 #include <linux/spinlock.h>
 #include <net/protocol.h>
-
+/* 应该是专门与四层协议有关的数组，三层协议应该不会注册到这个数组里。 */
 const struct net_protocol __rcu *inet_protos[MAX_INET_PROTOS] __read_mostly;
 const struct net_offload __rcu *inet_offloads[MAX_INET_PROTOS] __read_mostly;
 

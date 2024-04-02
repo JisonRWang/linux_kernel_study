@@ -140,7 +140,7 @@
 
 static DEFINE_SPINLOCK(ptype_lock);
 static DEFINE_SPINLOCK(offload_lock);
-struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
+struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly; /* 包类型链表头数组（IP/ARP等），哈希表。 */
 struct list_head ptype_all __read_mostly;	/* Taps */
 static struct list_head offload_base __read_mostly;
 
@@ -6272,7 +6272,7 @@ static int __init net_dev_init(void)
 
 	INIT_LIST_HEAD(&ptype_all);
 	for (i = 0; i < PTYPE_HASH_SIZE; i++)
-		INIT_LIST_HEAD(&ptype_base[i]);
+		INIT_LIST_HEAD(&ptype_base[i]); /* 初始化每个包类型的链表头 */
 
 	INIT_LIST_HEAD(&offload_base);
 

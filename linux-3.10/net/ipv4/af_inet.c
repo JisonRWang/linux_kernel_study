@@ -119,8 +119,8 @@
 #include <linux/mroute.h>
 #endif
 
-
-/* The inetsw table contains everything that inet_create needs to
+/* inetsw 是个链表头数组，该数组里有SOCK_MAX个链表，每个链表代表一种套接字类型。
+ * The inetsw table contains everything that inet_create needs to
  * build a new socket.
  */
 static struct list_head inetsw[SOCK_MAX];
@@ -1673,7 +1673,7 @@ static struct packet_offload ip_packet_offload __read_mostly = {
 		.gro_complete = inet_gro_complete,
 	},
 };
-
+/* TODO 后期细看 */
 static int __init ipv4_offload_init(void)
 {
 	/*
@@ -1689,12 +1689,12 @@ static int __init ipv4_offload_init(void)
 }
 
 fs_initcall(ipv4_offload_init);
-
+/* IP层包类型结构体定义 */
 static struct packet_type ip_packet_type __read_mostly = {
 	.type = cpu_to_be16(ETH_P_IP),
 	.func = ip_rcv,
 };
-
+/* 初始化网络协议栈，完成整个协议栈（IPv4）的注册过程 */
 static int __init inet_init(void)
 {
 	struct inet_protosw *q;
@@ -1738,7 +1738,7 @@ static int __init inet_init(void)
 	/*
 	 *	Add all the base protocols.
 	 */
-
+	/* 将icmp_rcv/udp_rcv/tcp_v4_rcv/igmp_rcv注册到inet_protos中，这里没IP什么事儿。 */
 	if (inet_add_protocol(&icmp_protocol, IPPROTO_ICMP) < 0)
 		pr_crit("%s: Cannot add ICMP protocol\n", __func__);
 	if (inet_add_protocol(&udp_protocol, IPPROTO_UDP) < 0)
@@ -1750,7 +1750,7 @@ static int __init inet_init(void)
 		pr_crit("%s: Cannot add IGMP protocol\n", __func__);
 #endif
 
-	/* Register the socket-side information for inet_create. */
+	/* Register the socket-side information for inet_create. 初始化每种类型套接字的链表头 */
 	for (r = &inetsw[0]; r < &inetsw[SOCK_MAX]; ++r)
 		INIT_LIST_HEAD(r);
 
@@ -1806,7 +1806,7 @@ static int __init inet_init(void)
 	ipv4_proc_init();
 
 	ipfrag_init();
-
+	/* 将IP包类型结构体链表头加到ptype_base[cpu_to_be16(ETH_P_IP)]里，ip_packet_type里面有ip_rcv */
 	dev_add_pack(&ip_packet_type);
 
 	rc = 0;
@@ -1823,7 +1823,7 @@ out_free_reserved_ports:
 	goto out;
 }
 
-/* TODO 后期细看该宏的原理（这里的详细调用过程） */
+/* TODO 后期细看该宏的原理（这里的详细调用过程），利用文件系统初始化宏来注册协议栈。 */
 fs_initcall(inet_init);
 
 /* ------------------------------------------------------------------------ */
