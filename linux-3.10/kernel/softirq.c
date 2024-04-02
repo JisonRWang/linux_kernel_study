@@ -52,7 +52,7 @@
 irq_cpustat_t irq_stat[NR_CPUS] ____cacheline_aligned;
 EXPORT_SYMBOL(irq_stat);
 #endif
-
+/* 软中断向量（全局的），该版本内核共10个软中断，网络收/发包各占用一个软中断 */
 static struct softirq_action softirq_vec[NR_SOFTIRQS] __cacheline_aligned_in_smp;
 
 DEFINE_PER_CPU(struct task_struct *, ksoftirqd);
@@ -404,10 +404,10 @@ void __raise_softirq_irqoff(unsigned int nr)
 	trace_softirq_raise(nr);
 	or_softirq_pending(1UL << nr);
 }
-
+/* 应该是注册软中断处理函数的接口 */
 void open_softirq(int nr, void (*action)(struct softirq_action *))
 {
-	softirq_vec[nr].action = action;
+	softirq_vec[nr].action = action;    /* 网络相关：net_tx_action/net_rx_action */
 }
 
 /*

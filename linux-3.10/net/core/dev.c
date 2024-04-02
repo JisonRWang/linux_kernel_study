@@ -3210,7 +3210,7 @@ int netif_rx_ni(struct sk_buff *skb)
 	return err;
 }
 EXPORT_SYMBOL(netif_rx_ni);
-
+/* 发包的软中断处理函数，通过open_softirq被注册到softirq_vec[NET_TX_SOFTIRQ].action */
 static void net_tx_action(struct softirq_action *h)
 {
 	struct softnet_data *sd = &__get_cpu_var(softnet_data);
@@ -4145,7 +4145,7 @@ void netif_napi_del(struct napi_struct *napi)
 	napi->gro_count = 0;
 }
 EXPORT_SYMBOL(netif_napi_del);
-
+/* 收包的软中断处理函数，通过open_softirq被注册到softirq_vec[NET_RX_SOFTIRQ].action */
 static void net_rx_action(struct softirq_action *h)
 {
 	struct softnet_data *sd = &__get_cpu_var(softnet_data);
@@ -6323,7 +6323,9 @@ static int __init net_dev_init(void)
 	if (register_pernet_device(&default_device_ops))
 		goto out;
 
-	/* 这里得结合 start_kernel()-->softirq_init() 函数一起看。 */
+	/* 这里得结合 start_kernel()-->softirq_init() 函数一起看。
+	 * 将收/发包的软中断处理函数注册到softirq_vec[NET_RX_SOFTIRQ/NET_TX_SOFTIRQ].action
+	 * */
 	open_softirq(NET_TX_SOFTIRQ, net_tx_action);
 	open_softirq(NET_RX_SOFTIRQ, net_rx_action);
 
@@ -6334,5 +6336,5 @@ out:
 	return rc;
 }
 
-/* TODO 后期细看该宏的原理 */
+/* TODO 后期细看该宏的原理。通过该宏在开机的时候初始化网络子系统 */
 subsys_initcall(net_dev_init);

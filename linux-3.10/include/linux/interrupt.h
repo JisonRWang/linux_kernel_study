@@ -408,13 +408,13 @@ extern bool force_irqthreads;
    tasklets are more than enough. F.e. all serial device BHs et
    al. should be converted to tasklets, not to softirqs.
  */
-
+/* 该版本内核一共10个软中断，网络收包/发包各占用一个 */
 enum
 {
 	HI_SOFTIRQ=0,
 	TIMER_SOFTIRQ,
-	NET_TX_SOFTIRQ,
-	NET_RX_SOFTIRQ,
+	NET_TX_SOFTIRQ, /* 网络发包类型软中断 */
+	NET_RX_SOFTIRQ, /* 网络收包类型软中断 */
 	BLOCK_SOFTIRQ,
 	BLOCK_IOPOLL_SOFTIRQ,
 	TASKLET_SOFTIRQ,

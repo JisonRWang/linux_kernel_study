@@ -1779,13 +1779,13 @@ static inline int unregister_gifconf(unsigned int family)
 	return register_gifconf(family, NULL);
 }
 
-/*
+/* 每个CPU都拥有一个该数据结构。
  * Incoming packets are placed on per-cpu queues
  */
 struct softnet_data {
 	struct Qdisc		*output_queue;
 	struct Qdisc		**output_queue_tailp;
-	struct list_head	poll_list;
+	struct list_head	poll_list; /* 需要轮循的设备列表列表 */ 
 	struct sk_buff		*completion_queue;
 	struct sk_buff_head	process_queue;
 
