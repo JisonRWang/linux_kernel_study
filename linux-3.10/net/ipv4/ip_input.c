@@ -372,7 +372,7 @@ drop:
 	return NET_RX_DROP;
 }
 
-/*
+/*  网络层收包入口
  * 	Main IP Receive routine.
  */
 int ip_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, struct net_device *orig_dev)

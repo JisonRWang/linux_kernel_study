@@ -1957,7 +1957,7 @@ EXPORT_SYMBOL(tcp_prequeue);
 /*
  *	From tcp_input.c
  */
-
+/* TCP 收包入口 */
 int tcp_v4_rcv(struct sk_buff *skb)
 {
 	const struct iphdr *iph;
