@@ -224,13 +224,13 @@ struct igb_rx_queue_stats {
 
 struct igb_ring_container {
 	struct igb_ring *ring;		/* pointer to linked list of rings */
-	unsigned int total_bytes;	/* total bytes processed this int */
+	unsigned int total_bytes;	/* total bytes processed this int（this int:本次中断） */
 	unsigned int total_packets;	/* total packets processed this int */
 	u16 work_limit;			/* total work allowed per interrupt */
 	u8 count;			/* total number of rings in vector */
 	u8 itr;				/* current ITR setting for ring */
 };
-
+/* 可以是收包ring也可以是发包ring */
 struct igb_ring {
 	struct igb_q_vector *q_vector;	/* backlink to q_vector */
 	struct net_device *netdev;	/* back pointer to net_device */
@@ -240,13 +240,13 @@ struct igb_ring {
 		struct igb_rx_buffer *rx_buffer_info;
 	};
 	unsigned long last_rx_timestamp;
-	void *desc;			/* descriptor ring memory */
+	void *desc;			/* descriptor ring memory. 应该是描述符数组首地址 */
 	unsigned long flags;		/* ring specific flags */
 	void __iomem *tail;		/* pointer to ring tail register */
 	dma_addr_t dma;			/* phys address of the ring */
 	unsigned int  size;		/* length of desc. ring in bytes */
 
-	u16 count;			/* number of desc. in the ring */
+	u16 count;			/* number of desc. in the ring. ring中描述符的个数即队列大小 */
 	u8 queue_index;			/* logical index of the ring*/
 	u8 reg_idx;			/* physical index of the ring */
 
@@ -280,13 +280,17 @@ struct igb_q_vector {
 	u8 set_itr;
 	void __iomem *itr_register;
 
-	struct igb_ring_container rx, tx;
+	struct igb_ring_container rx, tx;   /* 由此看出一个igb_q_vector最多同时负责一个收包ring和一个发包ring */
 
-	struct napi_struct napi;
+	struct napi_struct napi;    /* 注意napi这个对象在中断向量上面挂着，以此为单位的。 */
 	struct rcu_head rcu;	/* to avoid race with update stats on free */
 	char name[IFNAMSIZ + 9];
 
-	/* for dynamic allocation of rings associated with this q_vector */
+	/* for dynamic allocation of rings associated with this q_vector 
+	 * 重点！！！与该中断相关的收/发包队列ring对象就在这里！！！
+	 * 从igb_alloc_q_vector()可以看出，如果收包/发包ring都创建的话，
+	 * ring[0]是发包队列，ring[1]是收包队列。
+	 * */
 	struct igb_ring ring[0] ____cacheline_internodealigned_in_smp;
 };
 
@@ -357,8 +361,8 @@ struct igb_adapter {
 	unsigned long state;
 	unsigned int flags;
 
-	unsigned int num_q_vectors;
-	struct msix_entry *msix_entries;
+	unsigned int num_q_vectors; /* 记录队列相关的中断个数 */
+	struct msix_entry *msix_entries;    /* 数组，记录msi_x中断的entry，与队列个数和网卡连接状态有关 */
 
 	/* Interrupt Throttle Rate */
 	u32 rx_itr_setting;
@@ -370,11 +374,11 @@ struct igb_adapter {
 	u16 tx_work_limit;
 	u32 tx_timeout_count;
 	int num_tx_queues;
-	struct igb_ring *tx_ring[16];
+	struct igb_ring *tx_ring[16];   /* 由此可知该网卡最多16个发送队列 */
 
 	/* RX */
 	int num_rx_queues;
-	struct igb_ring *rx_ring[16];
+	struct igb_ring *rx_ring[16];   /* 由此可知该网卡最多16个接收队列 */
 
 	u32 max_frame_size;
 	u32 min_frame_size;
@@ -385,7 +389,7 @@ struct igb_adapter {
 	u16 mng_vlan_id;
 	u32 bd_number;
 	u32 wol;
-	u32 en_mng_pt;
+	u32 en_mng_pt;  /* TODO 什么作用？ */
 	u16 link_speed;
 	u16 link_duplex;
 
@@ -421,10 +425,10 @@ struct igb_adapter {
 	/* to not mess up cache alignment, always add to the bottom */
 	u16 tx_ring_count;
 	u16 rx_ring_count;
-	unsigned int vfs_allocated_count;
+	unsigned int vfs_allocated_count;   /* TODO 后期确认下这是干嘛的 */
 	struct vf_data_storage *vf_data;
 	int vf_rate_link_speed;
-	u32 rss_queues;
+	u32 rss_queues; /* 应该是给该硬件设备实际配置的收/发包队列个数 */
 	u32 wvbr;
 	u32 *shadow_vfta;
 

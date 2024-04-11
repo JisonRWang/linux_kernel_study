@@ -235,7 +235,7 @@ static void igb_init_dmac(struct igb_adapter *adapter, u32 pba);
 static struct pci_driver igb_driver = {
 	.name     = igb_driver_name,
 	.id_table = igb_pci_tbl,
-	.probe    = igb_probe,
+	.probe    = igb_probe,  /* 插入网卡时调用 */
 	.remove   = igb_remove,
 #ifdef CONFIG_PM
 	.driver.pm = &igb_pm_ops,
@@ -670,7 +670,7 @@ struct net_device *igb_get_hw_dev(struct e1000_hw *hw)
 	return adapter->netdev;
 }
 
-/**
+/** igb（intel）网卡驱动入口
  *  igb_init_module - Driver Registration Routine
  *
  *  igb_init_module is the first routine called when the driver is
@@ -720,7 +720,7 @@ module_exit(igb_exit_module);
 static void igb_cache_ring_register(struct igb_adapter *adapter)
 {
 	int i = 0, j = 0;
-	u32 rbase_offset = adapter->vfs_allocated_count;
+	u32 rbase_offset = adapter->vfs_allocated_count;    /* TODO 后期细看 */
 
 	switch (adapter->hw.mac.type) {
 	case e1000_82576:
@@ -1068,21 +1068,24 @@ static void igb_set_interrupt_capability(struct igb_adapter *adapter, bool msix)
 	if (!msix)
 		goto msi_only;
 
-	/* Number of supported queues. */
+	/* Number of supported queues. 重点！这里才是真正设置收/发包队列个数的地方 */
 	adapter->num_rx_queues = adapter->rss_queues;
-	if (adapter->vfs_allocated_count)
-		adapter->num_tx_queues = 1;
+	if (adapter->vfs_allocated_count)   /* TODO 得看下这东西干嘛的 */
+		adapter->num_tx_queues = 1;     /* 由此可知发包队列个数可不一定是rss_queues */
 	else
 		adapter->num_tx_queues = adapter->rss_queues;
 
-	/* start with one vector for every Rx queue */
+	/* start with one vector for every Rx queue  */
 	numvecs = adapter->num_rx_queues;
 
-	/* if Tx handler is separate add 1 for every Tx queue */
+	/* if Tx handler is separate add 1 for every Tx queue
+	 * 猜测，如果收/发包队列使用同一个中断号，那么该判断就不成立；该判断是专门给收/发包
+	 * 队列使用不同中断号时使用的。
+	 * */
 	if (!(adapter->flags & IGB_FLAG_QUEUE_PAIRS))
 		numvecs += adapter->num_tx_queues;
 
-	/* store the number of vectors reserved for queues */
+	/* store the number of vectors reserved for queues 记录队列相关的中断个数 */
 	adapter->num_q_vectors = numvecs;
 
 	/* add 1 vector for link status interrupts */
@@ -1095,13 +1098,13 @@ static void igb_set_interrupt_capability(struct igb_adapter *adapter, bool msix)
 
 	for (i = 0; i < numvecs; i++)
 		adapter->msix_entries[i].entry = i;
-
+	/* 使能本网卡的msi-x中断，TODO 后期细看，这里应该还没注册中断处理函数呢。 */
 	err = pci_enable_msix(adapter->pdev,
 			      adapter->msix_entries,
 			      numvecs);
-	if (err == 0)
+	if (err == 0)   /* 正常情况就是返回0，所以正常情况下就应该从这里返回了。 */
 		return;
-
+	/* 上面运行不正常才会执行该函数并往下继续执行。 */
 	igb_reset_interrupt_capability(adapter);
 
 	/* If we can't do MSI-X, try MSI */
@@ -1139,7 +1142,7 @@ static void igb_add_ring(struct igb_ring *ring,
 	head->count++;
 }
 
-/**
+/** 开辟内存创建中断向量和与该向量相关的收/发包ring的对象。
  *  igb_alloc_q_vector - Allocate memory for a single interrupt vector
  *  @adapter: board private structure to initialize
  *  @v_count: q_vectors allocated on adapter, used for ring interleaving
@@ -1164,20 +1167,35 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
 	if (txr_count > 1 || rxr_count > 1)
 		return -ENOMEM;
 
-	ring_count = txr_count + rxr_count;
+	/* 由此看出，一个q_vector可以单独负责一个收包队列的中断，或一个发包队列的中断，
+	 * 或同时负责一个收包队列加一个发包队列的中断。但是无法再同时负责更多队列的中断了，
+	 * 这一点从下面"if (txr_count) {"和"if (rxr_count) {"这两个判断里面设置ring的过程
+	 * 也可以得到印证，igb网卡一个中断向量就是这样。
+	 * 注意这里的size，从这里可以看出，下面用kzalloc开辟内存空间的时候，不仅仅是给
+	 * igb_q_vector开辟内存空间，同时也开辟内存创建了使用该中断向量对象的收/发包队列ring，
+	 * 更要注意的是，igb_q_vector作为变长结构体，末尾就携带了收/发包队列的ring对象！！！
+	 * 但是，虽然创建了ring对象，但是这个对象里面并没有携带真正可以保存数据的内存空间，
+	 * 该内存空间应该是igb_ring结构体里面的void *desc成员，而这里显然还没为该成员开辟内存
+	 * */
+	ring_count = txr_count + rxr_count; /* 最大也就是2了 */
 	size = sizeof(struct igb_q_vector) +
 	       (sizeof(struct igb_ring) * ring_count);
 
-	/* allocate q_vector and rings */
+	/* allocate q_vector and rings  为中断向量和ring环形队列开辟内存！！！ */
 	q_vector = kzalloc(size, GFP_KERNEL);
 	if (!q_vector)
 		return -ENOMEM;
 
-	/* initialize NAPI */
+	/* initialize NAPI 
+	 * 重点！！！自此开始初始化NAPI，默认权重是64（表示一次中断内
+	 * 设备可以处理的最大数据包个数）。主要的初始化动作就是将回调函数 igb_poll() 挂到
+	 * q_vector->napi上，将weight初始化为64，将q_vector->napi.state置为NAPI_STATE_SCHED。
+	 * 注意，此时还没有将该napi挂到对应CPU的softnet_data的poll_list链上。
+	 * */
 	netif_napi_add(adapter->netdev, &q_vector->napi,
 		       igb_poll, 64);
 
-	/* tie q_vector and adapter together */
+	/* tie q_vector and adapter together 将中断向量（带着收/发包ring对象呢）和设备对象互相指向 */
 	adapter->q_vector[v_idx] = q_vector;
 	q_vector->adapter = adapter;
 
@@ -1186,12 +1204,12 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
 
 	/* initialize ITR configuration */
 	q_vector->itr_register = adapter->hw.hw_addr + E1000_EITR(0);
-	q_vector->itr_val = IGB_START_ITR;
+	q_vector->itr_val = IGB_START_ITR;  /* TODO 该中断向量对应的每秒中断次数？！ */
 
-	/* initialize pointer to rings */
+	/* initialize pointer to rings 此时还看不出来这是收包ring还是发包ring，反正是第0个 */
 	ring = q_vector->ring;
 
-	/* intialize ITR */
+	/* intialize ITR TODO 后期细看 */
 	if (rxr_count) {
 		/* rx or rx/tx vector */
 		if (!adapter->rx_itr_setting || adapter->rx_itr_setting > 3)
@@ -1201,7 +1219,7 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
 		if (!adapter->tx_itr_setting || adapter->tx_itr_setting > 3)
 			q_vector->itr_val = adapter->tx_itr_setting;
 	}
-
+	/* 由此看出，如果收包/发包ring都创建的话，q_vector->ring[0]是发包队列，q_vector->ring[1]是收包队列。*/
 	if (txr_count) {
 		/* assign generic ring traits */
 		ring->dev = &adapter->pdev->dev;
@@ -1210,7 +1228,7 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
 		/* configure backlink on ring */
 		ring->q_vector = q_vector;
 
-		/* update q_vector Tx values */
+		/* update q_vector Tx values 把q_vector->ring[0]挂到q_vector->tx上 */
 		igb_add_ring(ring, &q_vector->tx);
 
 		/* For 82575, context index must be unique per ring. */
@@ -1218,13 +1236,13 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
 			set_bit(IGB_RING_FLAG_TX_CTX_IDX, &ring->flags);
 
 		/* apply Tx specific ring traits */
-		ring->count = adapter->tx_ring_count;
-		ring->queue_index = txr_idx;
+		ring->count = adapter->tx_ring_count;   /* igb_sw_init()函数一进去的时候设置的，即该ring的大小（容纳256个描述符） */
+		ring->queue_index = txr_idx;    /* TODO 应该是记录该队列在所有发送队列中的索引？！ */
 
-		/* assign ring to adapter */
+		/* assign ring to adapter 将该发送队列按照其在所有发送队列中的索引挂到该网卡设备的发送队列数组上 */
 		adapter->tx_ring[txr_idx] = ring;
 
-		/* push pointer to next ring */
+		/* push pointer to next ring 从第0个ring挪到第1个ring，则现在这个ring就是接收ring */
 		ring++;
 	}
 
@@ -1243,14 +1261,14 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
 		if (adapter->hw.mac.type >= e1000_82576)
 			set_bit(IGB_RING_FLAG_RX_SCTP_CSUM, &ring->flags);
 
-		/*
+		/* TODO 后期细看
 		 * On i350, i354, i210, and i211, loopback VLAN packets
 		 * have the tag byte-swapped.
 		 */
 		if (adapter->hw.mac.type >= e1000_i350)
 			set_bit(IGB_RING_FLAG_RX_LB_VLAN_BSWAP, &ring->flags);
 
-		/* apply Rx specific ring traits */
+		/* apply Rx specific ring traits 设置接收ring的大小，原理同发送ring */
 		ring->count = adapter->rx_ring_count;
 		ring->queue_index = rxr_idx;
 
@@ -1262,7 +1280,7 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
 }
 
 
-/**
+/** igb_alloc_q_vector()里面会初始化NAPI！！！
  *  igb_alloc_q_vectors - Allocate memory for interrupt vectors
  *  @adapter: board private structure to initialize
  *
@@ -1271,12 +1289,16 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
  **/
 static int igb_alloc_q_vectors(struct igb_adapter *adapter)
 {
-	int q_vectors = adapter->num_q_vectors;
+	int q_vectors = adapter->num_q_vectors; /* 总的中断个数，里面有一个连接状态中断 */
 	int rxr_remaining = adapter->num_rx_queues;
 	int txr_remaining = adapter->num_tx_queues;
 	int rxr_idx = 0, txr_idx = 0, v_idx = 0;
 	int err;
 
+	/* 如果收/发包队列使用同一个中断，那么q_vectors=rxr_remaining(or txr_remaining)+1，
+	 * 如果分别使用各自的中断，那么q_vectors=rxr_remaining+txr_remaining+1，
+	 * 所以收/发包队列使用同一个中断的情况下，是不会进入该判断的。
+	 * */
 	if (q_vectors >= (rxr_remaining + txr_remaining)) {
 		for (; rxr_remaining; v_idx++) {
 			err = igb_alloc_q_vector(adapter, q_vectors, v_idx,
@@ -1290,8 +1312,8 @@ static int igb_alloc_q_vectors(struct igb_adapter *adapter)
 			rxr_idx++;
 		}
 	}
-
-	for (; v_idx < q_vectors; v_idx++) {
+	/* 逐个创建中断向量以及创建和该向量相关的收/发包队列的ring对象，即环形队列就是在这里被创建的！！！ */
+	for (; v_idx < q_vectors; v_idx++) {    /* TODO 后期细看该循环 */
 		int rqpv = DIV_ROUND_UP(rxr_remaining, q_vectors - v_idx);
 		int tqpv = DIV_ROUND_UP(txr_remaining, q_vectors - v_idx);
 		err = igb_alloc_q_vector(adapter, q_vectors, v_idx,
@@ -1331,15 +1353,17 @@ static int igb_init_interrupt_scheme(struct igb_adapter *adapter, bool msix)
 {
 	struct pci_dev *pdev = adapter->pdev;
 	int err;
-
+	/* 里面根据rss_queues设置实际的收/发包队列个数，并据此个数创建这么多个msix entries并使能同等个数的msi-x中断 */
 	igb_set_interrupt_capability(adapter, msix);
-
+	/* 为每个中断向量对象igb_q_vector和对应的收/发包ring对象开辟内存空间（并未给ring里
+	 * 面实际存放数据的指针void *desc开辟内存空间）、初始化NAPI。
+	 * */
 	err = igb_alloc_q_vectors(adapter);
 	if (err) {
 		dev_err(&pdev->dev, "Unable to allocate memory for vectors\n");
 		goto err_alloc_q_vectors;
 	}
-
+	/* 该函数主要功能是设置该设备的收/发包队列的igb_ring.reg_idx TODO 具体作用后期再看 */
 	igb_cache_ring_register(adapter);
 
 	return 0;
@@ -1445,7 +1469,7 @@ static void igb_irq_disable(struct igb_adapter *adapter)
 	if (adapter->msix_entries) {
 		int i;
 		for (i = 0; i < adapter->num_q_vectors; i++)
-			synchronize_irq(adapter->msix_entries[i].vector);
+			synchronize_irq(adapter->msix_entries[i].vector);   /* 等待vector的中断处理函数退出才会返回 TODO 后期细看vector哪里被设置的 */
 	} else {
 		synchronize_irq(adapter->pdev->irq);
 	}
@@ -1890,7 +1914,7 @@ static int igb_set_features(struct net_device *netdev,
 }
 
 static const struct net_device_ops igb_netdev_ops = {
-	.ndo_open		= igb_open,
+	.ndo_open		= igb_open, /* 启动(up)网卡时被调用 */
 	.ndo_stop		= igb_close,
 	.ndo_start_xmit		= igb_xmit_frame,
 	.ndo_get_stats64	= igb_get_stats64,
@@ -1979,7 +2003,7 @@ static s32 igb_init_i2c(struct igb_adapter *adapter)
 	return status;
 }
 
-/**
+/** 网卡硬件设备初始化，应该主要是和初始化、配置硬件有关。
  *  igb_probe - Device Initialization Routine
  *  @pdev: PCI device information struct
  *  @ent: entry in igb_pci_tbl
@@ -1993,7 +2017,7 @@ static s32 igb_init_i2c(struct igb_adapter *adapter)
 static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
 	struct net_device *netdev;
-	struct igb_adapter *adapter;
+	struct igb_adapter *adapter;  /* 实际是网卡设备netdev的私有数据 */
 	struct e1000_hw *hw;
 	u16 eeprom_data = 0;
 	s32 ret_val;
@@ -2017,7 +2041,7 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		return err;
 
 	pci_using_dac = 0;
-	err = dma_set_mask(&pdev->dev, DMA_BIT_MASK(64));
+	err = dma_set_mask(&pdev->dev, DMA_BIT_MASK(64));   /* 开始初始化DMA？ */
 	if (!err) {
 		err = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(64));
 		if (!err)
@@ -2045,7 +2069,7 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	pci_set_master(pdev);
 	pci_save_state(pdev);
-
+	/* 应该是开辟内存空间分配一个 net_device 类型的结构（对象） */
 	err = -ENOMEM;
 	netdev = alloc_etherdev_mq(sizeof(struct igb_adapter),
 				   IGB_MAX_TX_QUEUES);
@@ -2056,9 +2080,9 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	pci_set_drvdata(pdev, netdev);
 	adapter = netdev_priv(netdev);
-	adapter->netdev = netdev;
-	adapter->pdev = pdev;
-	hw = &adapter->hw;
+	adapter->netdev = netdev; /* 把网卡设备本身挂到自己的私有数据上 */
+	adapter->pdev = pdev;     /* 把PCI结构挂上去 */
+	hw = &adapter->hw;        /* hw 也是adaper上的成员 */
 	hw->back = adapter;
 	adapter->msg_enable = netif_msg_init(debug, DEFAULT_MSG_ENABLE);
 
@@ -2070,14 +2094,14 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (!hw->hw_addr)
 		goto err_ioremap;
 
-	netdev->netdev_ops = &igb_netdev_ops;
-	igb_set_ethtool_ops(netdev);
+	netdev->netdev_ops = &igb_netdev_ops;   /* 重点！！！注册网卡管理函数 */
+	igb_set_ethtool_ops(netdev);    /* 把igb网卡给ethtool使用的回调函数注册到netdev */
 	netdev->watchdog_timeo = 5 * HZ;
 
 	strncpy(netdev->name, pci_name(pdev), sizeof(netdev->name) - 1);
 
-	netdev->mem_start = mmio_start;
-	netdev->mem_end = mmio_start + mmio_len;
+	netdev->mem_start = mmio_start;             /* TODO 后期细看下这里 */
+	netdev->mem_end = mmio_start + mmio_len;    /* TODO 后期细看下这里 */
 
 	/* PCI config space info */
 	hw->vendor_id = pdev->vendor;
@@ -2095,7 +2119,7 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (err)
 		goto err_sw_init;
 
-	/* setup the private structure */
+	/* -------> setup the private structure，重点！！！初始化网卡队列和NAPI软中断等。 */
 	err = igb_sw_init(adapter);
 	if (err)
 		goto err_sw_init;
@@ -2117,7 +2141,7 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	/* features is initialized to 0 in allocation, it might have bits
 	 * set by igb_sw_init so we should use an or instead of an
-	 * assignment.
+	 * assignment.  这里应该把该网卡支持的各种特性都给置上。
 	 */
 	netdev->features |= NETIF_F_SG |
 			    NETIF_F_IP_CSUM |
@@ -2158,8 +2182,8 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	adapter->en_mng_pt = igb_enable_mng_pass_thru(hw);
 
-	/* before reading the NVM, reset the controller to put the device in a
-	 * known good starting state
+	/* before reading the NVM（非易失性内存）, reset the controller to put the device in a
+	 * known good starting state TODO 后期细看
 	 */
 	hw->mac.ops.reset_hw(hw);
 
@@ -2178,7 +2202,7 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (hw->mac.ops.read_mac_addr(hw))
 		dev_err(&pdev->dev, "NVM Read Error\n");
 
-	memcpy(netdev->dev_addr, hw->mac.addr, netdev->addr_len);
+	memcpy(netdev->dev_addr, hw->mac.addr, netdev->addr_len); /* 获取网卡MAC地址 */
 
 	if (!is_valid_ether_addr(netdev->dev_addr)) {
 		dev_err(&pdev->dev, "Invalid MAC Address\n");
@@ -2285,11 +2309,11 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	igb_get_hw_control(adapter);
 
 	strcpy(netdev->name, "eth%d");
-	err = register_netdev(netdev);
+	err = register_netdev(netdev);  /* 将该网络设备添加到内核 */
 	if (err)
 		goto err_register;
 
-	/* carrier off reporting is important to ethtool even BEFORE open */
+	/* carrier off reporting is important to ethtool even BEFORE open TODO 后期细看 */
 	netif_carrier_off(netdev);
 
 #ifdef CONFIG_IGB_DCA
@@ -2561,7 +2585,8 @@ static void igb_remove(struct pci_dev *pdev)
 	pci_disable_device(pdev);
 }
 
-/**
+/** TODO 这里涉及IO虚拟化，SR-IOV（单根-IO虚拟化）后期细看（简单说就是一个物理网卡
+ *       可以虚拟出多个轻量化PCIe设备从而分配给不同的虚拟机使用）。
  *  igb_probe_vfs - Initialize vf data storage and add VFs to pci config space
  *  @adapter: board private structure to initialize
  *
@@ -2619,10 +2644,10 @@ static void igb_init_queue_configuration(struct igb_adapter *adapter)
 		max_rss_queues = IGB_MAX_RX_QUEUES;
 		break;
 	}
-
+	/* 重点！该网络设备实际支持的最大队列个数和当前在线CPU核心数二者的最小值是实际的队列个数 */
 	adapter->rss_queues = min_t(u32, max_rss_queues, num_online_cpus());
 
-	/* Determine if we need to pair queues. */
+	/* Determine if we need to pair queues.TODO 后期细看，貌似让同一个CPU核心上的收/发包队列使用不同的中断号，而通常是相同中断号 */
 	switch (hw->mac.type) {
 	case e1000_82575:
 	case e1000_i211:
@@ -2667,15 +2692,19 @@ static int igb_sw_init(struct igb_adapter *adapter)
 
 	pci_read_config_word(pdev, PCI_COMMAND, &hw->bus.pci_cmd_word);
 
-	/* set default ring sizes */
+	/* set default ring sizes，设置每个队列的大小（256）而不是收/发包队列个数 */
 	adapter->tx_ring_count = IGB_DEFAULT_TXD;
 	adapter->rx_ring_count = IGB_DEFAULT_RXD;
 
 	/* set default ITR values */
+	/* 详见 https://sgcdn.startech.com/005329/media/sets/Intel_I350_Drivers/Linux_Release_Notes.txt
+	 * ITR：InterruptThrottleRate，该值控制每个中断向量每秒可以产生的中断次数。
+	 * 0=off/1=dynamic/3=dynamic_conservative
+	 * */
 	adapter->rx_itr_setting = IGB_DEFAULT_ITR;
 	adapter->tx_itr_setting = IGB_DEFAULT_ITR;
 
-	/* set default work limits */
+	/* set default work limits，TODO 后期细看下这个工作限制到底是什么，哪里用的 */
 	adapter->tx_work_limit = IGB_DEFAULT_TX_WORK;
 
 	adapter->max_frame_size = netdev->mtu + ETH_HLEN + ETH_FCS_LEN +
@@ -2701,28 +2730,34 @@ static int igb_sw_init(struct igb_adapter *adapter)
 		break;
 	}
 #endif /* CONFIG_PCI_IOV */
-
+	/* 重点，里面设置该网卡设备的rss_queues值，该值在后面实际设置收/发包队列个数时会用到 */
 	igb_init_queue_configuration(adapter);
 
 	/* Setup and initialize a copy of the hw vlan table array */
 	adapter->shadow_vfta = kcalloc(E1000_VLAN_FILTER_TBL_SIZE, sizeof(u32),
 				       GFP_ATOMIC);
 
-	/* This call may decrease the number of queues */
+	/* This call may decrease the number of queues 
+	 * 1. 这里才会设置实际的网卡收/发包队列个数
+	 * 2. 使能与队列个数匹配的msi-x中断个数
+	 * 3. 为每个中断向量对象igb_q_vector和对应的收/发包ring对象开辟内存空间（ring上实
+	 *    际可以存储数据的空间还没开辟）
+	 * 4. 初始化NAPI（仅仅是把中断向量上携带的napi结构体初始化了一下，并未挂链）
+	 * */
 	if (igb_init_interrupt_scheme(adapter, true)) {
 		dev_err(&pdev->dev, "Unable to allocate memory for queues\n");
 		return -ENOMEM;
 	}
-
+	/* TODO SR-IOV虚拟化相关，后期细看 */
 	igb_probe_vfs(adapter);
 
-	/* Explicitly disable IRQ since the NIC can be in any state. */
+	/* Explicitly disable IRQ since the NIC can be in any state. TODO 后期细看 */
 	igb_irq_disable(adapter);
 
 	if (hw->mac.type >= e1000_i350)
 		adapter->flags &= ~IGB_FLAG_DMAC;
 
-	set_bit(__IGB_DOWN, &adapter->state);
+	set_bit(__IGB_DOWN, &adapter->state);   /* 注意这里给设备状态置的位！！！ */
 	return 0;
 }
 
@@ -5938,7 +5973,7 @@ static void igb_ring_irq_enable(struct igb_q_vector *q_vector)
 	}
 }
 
-/**
+/** NAPI收包时的轮循回调函数
  *  igb_poll - NAPI Rx polling callback
  *  @napi: napi polling structure
  *  @budget: count of how many packets we should handle

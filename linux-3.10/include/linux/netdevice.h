@@ -300,7 +300,9 @@ struct netdev_boot_setup {
 
 extern int __init netdev_boot_setup(char *str);
 
-/*
+/* 关于weight，参看https://lwn.net/Articles/139884/ 和 https://stackoverflow.com/questions/31417812/how-to-tune-the-polling-period-of-napi
+ * 该文中说4.12以下版本的内核，napi处理包的时间被硬限制为2 jiffies。放到这里，应该理解为
+ * 在2 jiffies内最多可以处理weight个包。
  * Structure for NAPI scheduling similar to tasklet but with weighting
  */
 struct napi_struct {
@@ -310,17 +312,17 @@ struct napi_struct {
 	 * to the per-cpu poll_list, and whoever clears that bit
 	 * can remove from the list right before clearing the bit.
 	 */
-	struct list_head	poll_list;
+	struct list_head	poll_list; /* 一个列表节点，用于将这个napi_struct实例链接到softnet_data（每CPU的）结构的poll_list中 */
 
 	unsigned long		state;
-	int			weight;
+	int			weight; /* 该设备在一次中断内可以处理的数据包个数 */
 	unsigned int		gro_count;
-	int			(*poll)(struct napi_struct *, int);
+	int			(*poll)(struct napi_struct *, int); /* 专门处理设备的接收队列 */
 #ifdef CONFIG_NETPOLL
 	spinlock_t		poll_lock;
 	int			poll_owner;
 #endif
-	struct net_device	*dev;
+	struct net_device	*dev;   /* 指向该napi对象对应的网络设备 */
 	struct sk_buff		*gro_list;
 	struct sk_buff		*skb;
 	struct list_head	dev_list;
@@ -1785,7 +1787,7 @@ static inline int unregister_gifconf(unsigned int family)
 struct softnet_data {
 	struct Qdisc		*output_queue;
 	struct Qdisc		**output_queue_tailp;
-	struct list_head	poll_list; /* 需要轮循的设备列表列表 */ 
+	struct list_head	poll_list; /* 需要轮循的设备列表，每CPU的napi对象挂到这里 */ 
 	struct sk_buff		*completion_queue;
 	struct sk_buff_head	process_queue;
 

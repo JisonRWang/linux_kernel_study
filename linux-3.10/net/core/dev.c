@@ -4113,11 +4113,11 @@ void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 	napi->gro_count = 0;
 	napi->gro_list = NULL;
 	napi->skb = NULL;
-	napi->poll = poll;
+	napi->poll = poll;  /* 重点！！！把回调函数注册到了该napi对象上。 */
 	if (weight > NAPI_POLL_WEIGHT)
 		pr_err_once("netif_napi_add() called with weight %d on device %s\n",
 			    weight, dev->name);
-	napi->weight = weight;
+	napi->weight = weight;  /* 初始化该设备的napi在一次中断内可以处理的数据包个数 */
 	list_add(&napi->dev_list, &dev->napi_list);
 	napi->dev = dev;
 #ifdef CONFIG_NETPOLL
